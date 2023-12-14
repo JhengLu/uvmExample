@@ -3,6 +3,7 @@ import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms 
 import torch.optim as optim
+from tqdm import tqdm # import the progress bar library
 
 # Assuming you use Device with UVM capabilities.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -11,7 +12,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 input_size = 78400
 hidden_size = 50000
 num_classes = 1000
-num_epochs = 5
+num_epochs = 50
 batch_size = 500
 learning_rate = 0.001
 
@@ -47,7 +48,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 # Training Process
 total_step = len(train_loader)
 for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_loader):  
+    pbar = tqdm(train_loader) # Initialize progress bar
+    for i, (images, labels) in enumerate(pbar):  
         # Move tensors to the configured device
         images = images.reshape(-1, 28*28).to(device)
         labels = labels.to(device)
@@ -61,9 +63,8 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
         
-        if (i+1) % 100 == 0:
-            print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
-                   .format(epoch+1, num_epochs, i+1, total_step, loss.item()))
+        # Update progress bar
+        pbar.set_description("Epoch [{}/{}], Loss: {:.4f}".format(epoch+1, num_epochs, loss.item()))
 
 # Save the model checkpoint
 torch.save(model.state_dict(), 'model.ckpt')

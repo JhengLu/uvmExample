@@ -12,7 +12,7 @@ input_size = 78400
 hidden_size = 50000
 num_classes = 1000
 num_epochs = 5
-batch_size = 100
+batch_size = 500
 learning_rate = 0.001
 
 # Download MNIST dataset.
@@ -24,20 +24,21 @@ train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=bat
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
 
 # Make a Basic Feedforward Model.
-class NN(nn.Module):
+class LargerNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
-        super(NN, self).__init__()
+        super(LargerNN, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size) 
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, num_classes)  
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_size, num_classes)  
     
     def forward(self, x):
-        out = self.fc1(x)
-        out = self.relu(out)
-        out = self.fc2(out)
+        out = self.relu(self.fc1(x))
+        out = self.relu(self.fc2(out))
+        out = self.fc3(out)
         return out
 
-model = NN(input_size, hidden_size, num_classes).to(device)
+model = LargerNN(input_size, hidden_size, num_classes).to(device)
 
 # Loss and optimizer
 loss_function = nn.CrossEntropyLoss()

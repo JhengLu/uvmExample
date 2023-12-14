@@ -8,9 +8,9 @@ import torch.optim as optim
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Declare Hyperparameters
-input_size = 784
-hidden_size = 500
-num_classes = 10
+input_size = 78400
+hidden_size = 50000
+num_classes = 1000
 num_epochs = 5
 batch_size = 100
 learning_rate = 0.001

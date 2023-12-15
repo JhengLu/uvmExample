@@ -9,7 +9,7 @@ from tqdm import tqdm # import the progress bar library
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Declare Hyperparameters
-input_size = 78400
+input_size = 784
 hidden_size = 50000
 num_classes = 1000
 num_epochs = 50

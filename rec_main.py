@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchrec.modules.embedding_modules import EmbeddingBagCollection, EmbeddingConfig
-from torchrec.distributed.embedding_types import EmbeddingComputeKernel, EmbeddingComputeDevice
+from torchrec.distributed.embedding_types import EmbeddingComputeKernel
 
 # Assuming a CUDA device with UVM capabilities
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -38,8 +38,7 @@ class RecSysModel(nn.Module):
     def __init__(self, num_users, num_items, embedding_dim):
         super().__init__()
         embedding_config = EmbeddingConfig(
-            compute_kernel=EmbeddingComputeKernel.FUSED_UVM,
-            compute_device=EmbeddingComputeDevice.CUDA
+            compute_kernel=EmbeddingComputeKernel.FUSED_UVM
         )
         self.user_embeddings = EmbeddingBagCollection(
             num_embeddings=num_users,

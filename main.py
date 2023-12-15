@@ -1,14 +1,14 @@
 import torch
 import torch.nn as nn
 import torchvision
-import torchvision.transforms as transforms 
+import torchvision.transforms as transforms
 import torch.optim as optim
-from tqdm import tqdm # import the progress bar library
+from tqdm import tqdm
+import torch.cuda.amp as amp  # For mixed precision training
 
-# Assuming you use Device with UVM capabilities.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Declare Hyperparameters
+# Your Hyperparameters
 input_size = 784
 hidden_size = 50000
 num_classes = 1000
@@ -16,21 +16,21 @@ num_epochs = 50
 batch_size = 500
 learning_rate = 0.001
 
-# Download MNIST dataset.
-train_dataset = torchvision.datasets.MNIST(root='./data', train=True, transform=transforms.ToTensor(), download=False)
-test_dataset = torchvision.datasets.MNIST(root='./data', train=False, transform=transforms.ToTensor(), download=False)
+# MNIST dataset
+train_dataset = torchvision.datasets.MNIST(root='./data', train=True, transform=transforms.ToTensor(), download=True)
+test_dataset = torchvision.datasets.MNIST(root='./data', train=False, transform=transforms.ToTensor(), download=True)
 
-# Create Data loader.
+# Data loader
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
 
-# Make a Basic Feedforward Model.
+# Model
 class LargerNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):
         super(LargerNN, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size) 
+        self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, num_classes)  
+        self.fc3 = nn.Linear(hidden_size, num_classes)
         self.relu = nn.ReLU()
     
     def forward(self, x):
@@ -43,28 +43,31 @@ model = LargerNN(input_size, hidden_size, num_classes).to(device)
 
 # Loss and optimizer
 loss_function = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+# Automatic Mixed Precision
+scaler = amp.GradScaler()
 
 # Training Process
 total_step = len(train_loader)
 for epoch in range(num_epochs):
-    pbar = tqdm(train_loader) # Initialize progress bar
-    for i, (images, labels) in enumerate(pbar):  
-        # Move tensors to the configured device
+    pbar = tqdm(train_loader)
+    for i, (images, labels) in enumerate(pbar):
         images = images.reshape(-1, 28*28).to(device)
         labels = labels.to(device)
         
+        optimizer.zero_grad()
+
         # Forward pass
-        outputs = model(images)
-        loss = loss_function(outputs, labels)
+        with amp.autocast():  # Mixed precision
+            outputs = model(images)
+            loss = loss_function(outputs, labels)
         
         # Backward and optimize
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
         
-        # Update progress bar
         pbar.set_description("Epoch [{}/{}], Loss: {:.4f}".format(epoch+1, num_epochs, loss.item()))
 
-# Save the model checkpoint
 torch.save(model.state_dict(), 'model.ckpt')

@@ -1,11 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchvision.datasets as datasets
-import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torchrec.modules.embedding_modules import EmbeddingBagCollection, EmbeddingConfig
-from torchrec.modules.interaction_modules import MLPInteraction
 from torchrec.distributed.embedding_types import EmbeddingComputeKernel, EmbeddingComputeDevice
 
 # Assuming a CUDA device with UVM capabilities
@@ -19,8 +16,21 @@ learning_rate = 0.001
 num_epochs = 10
 embedding_dim = 64
 
-# Create a fake dataset for demonstration
-dataset = datasets.FakeData(size=60000, image_size=(1, 28, 28), num_classes=10, transform=transforms.ToTensor())
+# Simulate a dataset
+class FakeDataset(torch.utils.data.Dataset):
+    def __init__(self, size):
+        self.size = size
+
+    def __len__(self):
+        return self.size
+
+    def __getitem__(self, idx):
+        user_id = torch.randint(0, num_users, (1,))
+        item_id = torch.randint(0, num_items, (1,))
+        label = torch.rand(1).float()
+        return user_id, item_id, label
+
+dataset = FakeDataset(60000)
 train_dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Define the Model
@@ -41,13 +51,19 @@ class RecSysModel(nn.Module):
             embedding_dim=embedding_dim,
             config=embedding_config,
         )
-        self.interaction = MLPInteraction(input_dim=embedding_dim*2, layer_sizes=[64, 32, 1])
+        self.fc_layers = nn.Sequential(
+            nn.Linear(embedding_dim * 2, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 1)
+        )
     
     def forward(self, user_id, item_id):
         user_emb = self.user_embeddings(user_id)
         item_emb = self.item_embeddings(item_id)
         interaction = torch.cat([user_emb, item_emb], dim=1)
-        return self.interaction(interaction)
+        return self.fc_layers(interaction)
 
 model = RecSysModel(num_users, num_items, embedding_dim).to(device)
 
@@ -57,17 +73,12 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Training Loop
 for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_dataloader):
-        # Generate random user and item IDs for demonstration
-        user_ids = torch.randint(0, num_users, (batch_size,))
-        item_ids = torch.randint(0, num_items, (batch_size,))
-        targets = torch.rand(batch_size, 1).float()
-
-        user_ids, item_ids, targets = user_ids.to(device), item_ids.to(device), targets.to(device)
+    for i, (user_ids, item_ids, labels) in enumerate(train_dataloader):
+        user_ids, item_ids, labels = user_ids.to(device), item_ids.to(device), labels.to(device)
 
         # Forward pass
         outputs = model(user_ids, item_ids).squeeze()
-        loss = criterion(outputs, targets)
+        loss = criterion(outputs, labels)
 
         # Backward and optimize
         optimizer.zero_grad()

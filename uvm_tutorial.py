@@ -6,7 +6,7 @@ import torch.distributed as dist
 os.environ["RANK"] = "0"
 os.environ["WORLD_SIZE"] = "1"
 os.environ["MASTER_ADDR"] = "localhost"
-os.environ["MASTER_PORT"] = "29500"
+os.environ["MASTER_PORT"] = "29502"
 
 # Note - you will need a V100 or A100 to run tutorial!
 # If using an older GPU (such as colab free K80), 
@@ -44,7 +44,7 @@ topology = Topology(world_size=1, compute_device="cuda")
 constraints = {
     "large_table": ParameterConstraints(
         sharding_types=["table_wise"],
-        compute_kernels=[EmbeddingComputeKernel.BATCHED_FUSED_UVM.value],
+        compute_kernels=[EmbeddingComputeKernel.FUSED_UVM.value],
     )
 }
 plan = EmbeddingShardingPlanner(

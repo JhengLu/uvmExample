@@ -6,7 +6,7 @@ import torch.distributed as dist
 os.environ["RANK"] = "0"
 os.environ["WORLD_SIZE"] = "1"
 os.environ["MASTER_ADDR"] = "localhost"
-os.environ["MASTER_PORT"] = "29502"
+os.environ["MASTER_PORT"] = "29503"
 
 # Note - you will need a V100 or A100 to run tutorial!
 # If using an older GPU (such as colab free K80), 
@@ -14,7 +14,7 @@ os.environ["MASTER_PORT"] = "29502"
 # or run with "gloo" on CPUs 
 dist.init_process_group(backend="nccl")
 gpu_device=torch.device("cuda")
-hbm_cap_2x = 2 * torch.cuda.get_device_properties(gpu_device).total_memory
+hbm_cap_2x = 3 * torch.cuda.get_device_properties(gpu_device).total_memory
 
 embedding_dim = 8
 # By default, each element is FP32, hence, we divide by sizeof(FP32) == 4.

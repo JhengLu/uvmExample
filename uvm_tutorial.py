@@ -14,7 +14,7 @@ os.environ["MASTER_PORT"] = "29503"
 # or run with "gloo" on CPUs 
 dist.init_process_group(backend="nccl")
 gpu_device=torch.device("cuda")
-hbm_cap_2x = 3 * torch.cuda.get_device_properties(gpu_device).total_memory
+hbm_cap_2x = 2 * torch.cuda.get_device_properties(gpu_device).total_memory
 
 embedding_dim = 8
 # By default, each element is FP32, hence, we divide by sizeof(FP32) == 4.
